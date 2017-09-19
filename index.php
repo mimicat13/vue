@@ -15,13 +15,32 @@
 			.myclass-2{
 				color:teal;
 			}
+			.cls-pusher{
+				width:30px;
+				height:30px;
+				background-color:teal;
+			}
+			.router-link-active {
+				color: red;
+			}			
 		</style>
 		
 		<script src="vue.js"></script>
+		<script src="vue-router.js"></script>
 	</head>
 	
 	<body>
 		<div id="app">
+			<hr>
+			<router-link to="/foo">Go to Foo</router-link><br>
+			<router-link to="/bar">Go to Bar</router-link><br>
+			<router-link to="/user/123">Go to user:123</router-link><br>
+			<router-link to="/abcd404page">Go to 404</router-link><br>
+			<hr>
+			<router-view>***</router-view>
+			<hr>
+			
+			
 			<p>{{ message }}</p>
 			<p v-bind:title="mytitle">title</p>
 			<p v-if="seen">Visible if var seen is true</p>
@@ -94,7 +113,7 @@
 				</template>
 			</ul>
 			
-			<li v-for="todox in todoxs">
+			<li v-for="todox in todosx">
 				<template v-if="!todox.isComplete">
 					<span class='myclass-2'>
 					{{ todox.text }}
@@ -173,17 +192,75 @@
 			.left
 			.right
 			.middle
-
-			
-			
 			*/?>
 			
+			<hr>
+			<span>textarea text:</span>
+			<p style="white-space: pre-line;">{{ message }}</p>
+			<br>
+			<textarea v-model="message" placeholder="введите несколько строчек"></textarea>			
+			<br>
+			<input type="checkbox" id="checkbox" v-model="checked">
+			<label for="checkbox">{{ checked }}</label>	
+			<hr>
+			<div id="example-3" class="demo">
+			  <input type="checkbox" id="jack" value="Jack" v-model="checkedNames">
+			  <label for="jack">Jack</label>
+			  <input type="checkbox" id="john" value="John" v-model="checkedNames">
+			  <label for="john">John</label>
+			  <input type="checkbox" id="mike" value="Mike" v-model="checkedNames">
+			  <label for="mike">Mike</label>
+			  <br>
+			  <span>Selected Names: {{ checkedNames }}</span>
+			</div>	
+			<hr>
+			<input type="radio" id="one" value="One" v-model="picked">
+			<label for="one">One</label>
+			<br>
+			<input type="radio" id="two" value="Two" v-model="picked">
+			<label for="two">Two</label>
+			<br>
+			<span>Picked value: {{ picked }}</span>		
+			<hr>
+			<select v-model="dbox_selected">
+			  <option disabled value="">Select one</option>
+			  <option>A</option>
+			  <option>B</option>
+			  <option>C</option>
+			</select>
+			<span>Selected: {{ dbox_selected }}</span>
+			<hr>
+			<div id="counter-event-example">
+			  <p>{{ pusher_global_increment }}</p>
+			  <pusher v-on:increment="pusherGlobalIncrement"></pusher>
+			  <pusher v-on:increment="pusherGlobalIncrement"></pusher>
+			</div>			
 			
-			
-			
+			<hr>
 		</div>	
 		
 		<script>
+			var NotFound = { template: '<p>404</p>' }
+			var Foo	 = { template: '<div>foo</div>' };
+			var Bar	 = { template: '<div>bar</div>' };
+			var User = { 
+				template: '<div>User {{ $route.params.id }}</div>',
+				beforeRouteUpdate (to, from, next) {
+					// обработка изменений параметров пути...
+					// не забудьте вызывать next()
+					next();
+				}
+			};
+			var routes = [
+				{ path: '/foo',		component: Foo },
+				{ path: '/bar',		component: Bar },
+				{ path: '/user/:id',	component: User }
+			];
+			var router = new VueRouter({
+				routes
+			})			
+		
+		
 			Vue.component('todo-item', {
 				props: ['stuff'],
 				template: '<li class="{myclass-0}">{{ stuff.text }}</li>'
@@ -197,6 +274,22 @@
 					'<button v-on:click="$emit(\'remove\')">X</button>' +
 				'</li>'
 			})			
+			
+			Vue.component('pusher', {
+				props:	  ['pusher_counter'],
+				template: '<div class="cls-pusher" v-on:click="pusherIncrement">{{counter}}</div>',
+				data: function () {
+					return {
+						counter: 0
+					}
+				},
+				methods: {
+					pusherIncrement: function () {
+						this.counter += 1;
+						this.$emit('increment');
+					}
+				}
+			});
 			
 			/*/
 			// Наш объект data
@@ -218,7 +311,10 @@
 			
 			var app = new Vue({
 				el: '#app',
+				router: router,
 				data: {
+					currentRoute: window.location.pathname,
+					
 					message: 'Test: ' + new Date().toLocaleString(),
 					mytitle: 'My New Title',
 					seen: true,
@@ -272,7 +368,17 @@
 						{id: 1, isComplete: true, title:'todo title 1'},
 						{id: 2, isComplete: false, title:'todo title 2'},
 					],
-					nextTodoId: 4
+					nextTodoId: 4,
+					
+					checked: true,
+					
+					checkedNames: [],
+					
+					picked: 'One',
+					
+					dbox_selected: '',
+					
+					pusher_global_increment: 0
 				},
 				watch: {
 					imp_message: function(param){
@@ -300,12 +406,28 @@
 					say: function (message, event) {
 						if (event) event.preventDefault(); // orifinal event
 						alert(message);
+					},
+					
+					pusherGlobalIncrement: function () {
+					  this.pusher_global_increment += 1
 					}					
 				},
 				
 				created: function () {
 					console.log('instance of vue: ' + this);
+				},
+				
+				/*/
+				computed: {
+					ViewComponent () {
+						return routes[this.currentRoute] || NotFound
+					}
+				},
+				render (h) { 
+					return h(this.ViewComponent) 
 				}
+				/**/
+		
 				//mounted
 				//	this.$nextTick(function () { 
 				//		Код, который будет запущен только после 
