@@ -26,6 +26,7 @@
 		</style>
 		
 		<script src="vue.js"></script>
+		<script src="vuex.js"></script>
 		<script src="vue-router.js"></script>
 	</head>
 	
@@ -258,7 +259,7 @@
 			];
 			var router = new VueRouter({
 				routes
-			})			
+			});	
 		
 		
 			Vue.component('todo-item', {
